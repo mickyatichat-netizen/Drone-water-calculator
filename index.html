@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#10251d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="คำนวณน้ำโดรน">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>คำนวณน้ำโดรน</title>
+<style>
+:root{color-scheme:dark;--bg:#0c1712;--card:#172820;--line:#2b4437;--green:#65d69a;--muted:#a9bdb0}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(160deg,#10251d,#0b1511 65%);color:#f4fff7;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding:env(safe-area-inset-top) 16px env(safe-area-inset-bottom)}
+main{max-width:520px;margin:0 auto;padding:24px 0 34px}.top{display:flex;align-items:center;gap:12px;margin-bottom:20px}.logo{width:48px;height:48px;border-radius:15px;background:#234c38;display:grid;place-items:center;font-size:26px}
+h1{font-size:23px;margin:0} .sub{color:var(--muted);font-size:13px;margin-top:4px}
+.card{background:rgba(23,40,32,.96);border:1px solid var(--line);border-radius:20px;padding:18px;margin:14px 0}
+label{display:block;font-size:14px;color:#d4e7da;margin:13px 0 7px}
+input{width:100%;font-size:19px;color:#fff;background:#0d1b14;border:1px solid #365342;border-radius:12px;padding:13px;outline:none}
+input:focus{border-color:var(--green);box-shadow:0 0 0 3px #65d69a22}
+.unit{font-size:12px;color:var(--muted);margin-top:5px}
+.results{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.metric{background:#0e1c15;border:1px solid #294334;border-radius:14px;padding:13px}
+.metric small{display:block;color:var(--muted);font-size:12px;margin-bottom:7px}
+.metric strong{font-size:21px;color:#fff;overflow-wrap:anywhere}
+.big{background:#1c4932;border-color:#34734e;grid-column:1/-1}
+.big strong{font-size:34px;color:#8df0b5}
+.note{font-size:12px;color:var(--muted);line-height:1.6;margin-top:12px}
+button{width:100%;border:0;border-radius:13px;padding:14px;font-size:16px;font-weight:700;background:#65d69a;color:#092015;margin-top:15px}
+footer{text-align:center;color:#8da697;font-size:11px;margin-top:18px}
+@media(max-width:360px){.results{grid-template-columns:1fr}.big{grid-column:auto}}
+</style>
+</head>
+<body><main>
+<header class="top"><div class="logo">🚁</div><div><h1>คำนวณน้ำโดรน</h1><div class="sub">คำนวณน้ำต่อเที่ยวและจำนวนเที่ยวบิน</div></div></header>
+<section class="card">
+<label for="distance">ระยะทางบิน (เมตร)</label><input id="distance" type="number" inputmode="decimal" min="0" step="any" value="578">
+<div class="unit">ระยะทางรวมของแนวบินที่ต้องการคำนวณ</div>
+<label for="speed">ความเร็วบิน (เมตร/วินาที)</label><input id="speed" type="number" inputmode="decimal" min="0.01" step="any" value="1.3">
+<label for="flow">อัตราการไหล (ลิตร/นาที)</label><input id="flow" type="number" inputmode="decimal" min="0" step="any" value="10">
+<label for="tank">ปริมาณน้ำที่เติมลงถัง (ลิตร)</label><input id="tank" type="number" inputmode="decimal" min="0" step="any" value="30">
+</section>
+<section class="card">
+<div style="font-weight:700;font-size:17px">ผลการคำนวณ</div>
+<div class="results">
+<div class="metric"><small>เวลาในการบิน</small><strong id="seconds">—</strong><div class="unit">วินาที</div></div>
+<div class="metric"><small>เวลาในการบิน</small><strong id="minutes">—</strong><div class="unit">นาที</div></div>
+<div class="metric"><small>น้ำที่ใช้ต่อเที่ยว</small><strong id="perTrip">—</strong><div class="unit">ลิตร</div></div>
+<div class="metric"><small>จำนวนเที่ยวเต็ม</small><strong id="trips">—</strong><div class="unit">เที่ยว</div></div>
+<div class="metric big"><small>น้ำคงเหลือหลังบินครบเที่ยวเต็ม</small><strong id="left">—</strong><div class="unit">ลิตร</div></div>
+</div>
+<div class="note" id="explain">กรอกตัวเลขเพื่อคำนวณอัตโนมัติ</div>
+<button type="button" id="reset">ล้างค่า / เริ่มใหม่</button>
+</section>
+<footer>เครื่องมือช่วยคำนวณเบื้องต้น • ตรวจสอบอัตราการไหลจริงก่อนใช้งาน</footer>
+</main>
+<script>
+const ids=['distance','speed','flow','tank'];
+const el=id=>document.getElementById(id);
+function fmt(x,n=2){return Number.isFinite(x)?x.toLocaleString('th-TH',{minimumFractionDigits:n,maximumFractionDigits:n}):'—'}
+function calc(){
+ const [d,v,f,t]=ids.map(id=>el(id).value.trim()===''?NaN:Number(el(id).value));
+ const valid=[d,v,f,t].every(Number.isFinite)&&d>=0&&v>0&&f>=0&&t>=0;
+ if(!valid){['seconds','minutes','perTrip','trips','left'].forEach(id=>el(id).textContent='—');el('explain').textContent='กรุณากรอกตัวเลขให้ครบ ความเร็วต้องมากกว่า 0';return}
+ const sec=d/v, min=sec/60, water=min*f;
+ const trips=water>0?Math.floor(t/water):0;
+ const remain=water>0?t-trips*water:t;
+ el('seconds').textContent=fmt(sec);el('minutes').textContent=fmt(min);
+ el('perTrip').textContent=fmt(water);
+ el('trips').textContent=water>0?trips.toLocaleString('th-TH'):'—';
+ el('left').textContent=fmt(remain);
+ el('explain').textContent=water>0?`น้ำที่เติม ${fmt(t)} ลิตร ÷ น้ำต่อเที่ยว ${fmt(water)} ลิตร = ${fmt(t/water)} เที่ยว (นับเฉพาะเที่ยวเต็ม)`:'น้ำต่อเที่ยวเป็น 0 ลิตร จึงยังคำนวณจำนวนเที่ยวไม่ได้';
+}
+ids.forEach(id=>el(id).addEventListener('input',calc));
+el('reset').addEventListener('click',()=>{['578','1.3','10','30'].forEach((v,i)=>el(ids[i]).value=v);calc()});
+calc();
+</script>
+</body></html>
+<script>if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js"));</script>

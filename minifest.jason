@@ -1,0 +1,10 @@
+
+{
+  "name": "Drone Water Calculator",
+  "short_name": "Drone Water",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0b1711",
+  "theme_color": "#10251d"
+}
